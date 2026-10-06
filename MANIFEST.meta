@@ -1,0 +1,52 @@
+{
+  "tool": "PackerZero",
+  "version": "1.0",
+  "class": "PE protector / packer (legitimate software protection)",
+  "author_context": "Xyberix tool framework - risk-gated build, user confirmed YES",
+  "components": {
+    "packer.py":    "Python 3.10+ CLI. Optional dep: 'cryptography' (preferred AES-GCM/PBKDF2 backend). Fallback: Windows CNG via ctypes (bcrypt.dll).",
+    "stub/stub.c":  "x64 runtime stub, C, no CRT. Requires MSVC or MinGW-w64 to build (build.bat). Decrypts via CNG AES-256-GCM at runtime.",
+    "build.bat":    "Stub builder. Detects cl.exe / x86_64-w64-mingw32-gcc / gcc.",
+    "README.md":    "Usage, design, limitations.",
+    "MANIFEST.meta": "This file."
+  },
+  "platform": "Windows x64 only (host and target)",
+  "formats_supported": ["PE32+ EXE", "PE32+ DLL"],
+  "crypto": {
+    "encryption": "AES-256-GCM (BCrypt/CNG)",
+    "key_derivation": "PBKDF2-SHA256, 200,000 iterations, 16-byte salt (optional password mode)",
+    "compression": "LZ4 block format (custom codec, shared C/Python implementations)",
+    "integrity": "GCM auth tag + CRC32 of original image",
+    "aad": "116-byte header with tag field (offset 36..52) zeroed - MUST match between packer and stub"
+  },
+  "overlay_format": {
+    "magic": "PZPK (4 bytes)",
+    "header_size": 116,
+    "fields": "magic[4] ver(u16) flags(u16) origSize(u32) compSize(u32) encSize(u32) crc32(u32) nonce[12] tag[16] keyXor[32] keyPad[32]",
+    "flags": {"0x0001": "compressed (LZ4)", "0x0002": "payload is DLL", "0x0004": "password mode"},
+    "password_section": "present iff 0x0004: salt[16] iterations(u32) pwLen(u16) pwXor[pwLen]",
+    "payload": "AES-256-GCM ciphertext (length == encSize)"
+  },
+  "execution_model": "pack and verify NEVER execute the payload. selftest executes only its own round-trip checks.",
+  "known_limitations": [
+    "x64/AMD64 only",
+    "refuses managed (.NET) images",
+    "TLS callbacks not run; delay imports unresolved (warned at pack time)",
+    "bound imports treated as unbound",
+    "embedded password = obfuscation grade only",
+    "packed output is expected to be flagged by AV/EDR (packing is a known heuristic) - this tool does not attempt evasion"
+  ],
+  "risk_gate": {
+    "asked": true,
+    "answer": "YES",
+    "behaviors": ["writes files to disk", "allocates executable memory at runtime", "contains encryption/obfuscation"],
+    "absent_behaviors": ["no auto-execution", "no network access", "no persistence", "no detection evasion"]
+  },
+  "usage_examples": [
+    "build.bat",
+    "python packer.py selftest",
+    "python packer.py pack app.exe app.packed.exe",
+    "python packer.py pack lib.dll lib.packed.dll --password <pw>",
+    "python packer.py verify app.packed.exe"
+  ]
+}
