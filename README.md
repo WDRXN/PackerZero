@@ -145,10 +145,10 @@ x86_64-w64-mingw32-gcc -O2 -nostdlib -fno-stack-protector -o stub\stub_exe.exe s
 x86_64-w64-mingw32-gcc -O2 -nostdlib -fno-stack-protector -shared -DSTUB_DLL -o stub\stub_dll.dll stub\stub.c -Wl,--entry=DllMainStub -lkernel32 -lbcrypt -lgcc
 ```
 
-## License
+## Copyright
 
-**All rights reserved.** No open-source license is granted. This
-work is private property of the author and may not be copied,
-modified, redistributed, or used in any form without explicit
-prior written permission from the author. Provided as-is; no
-warranty.
+© 2026 WDRXN. **All rights reserved.**
+
+No license is granted. This software may not be used, copied, modified,
+distributed, or incorporated into other work — in whole or in part — without
+explicit written permission from the author.
